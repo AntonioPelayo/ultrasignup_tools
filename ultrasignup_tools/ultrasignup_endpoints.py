@@ -2,6 +2,10 @@ class UltraSignupEndpoints:
     BASE_URL = 'https://ultrasignup.com'
 
     @classmethod
+    def athlete_url(cls, first_name, last_name):
+        return f'{cls.BASE_URL}/results_participant.aspx?fname={first_name}&lname={last_name}'
+
+    @classmethod
     def event_id(cls, event_url):
         return event_url.split('=')[-1]
 
