@@ -1,19 +1,20 @@
 import re
 
 from .web_scraping import get_webpage_soup
+from .utils import is_future_date
 
-pattern = re.compile(r'[MF]\d+')
+age_division_pattern = re.compile(r'[MF]\d+')
 
 HTML_TAGS = {
     'age': {
         'tag': 'span',
         'attribute': 'string',
-        'identifier': pattern
+        'identifier': age_division_pattern
     },
     'division': {
         'tag': 'span',
         'attribute': 'string',
-        'identifier': pattern
+        'identifier': age_division_pattern
     },
     'rank': {
         'tag': 'div',
@@ -36,6 +37,34 @@ HTML_TAGS = {
         'identifier': 'rowlines'
     }
 }
+
+def get_race_data(race_soup):
+    """
+    Extracts race results data from race history table rows.
+
+    Args:
+        race_soup (BeautifulSoup): The race row soup object.
+
+    Returns:
+        str: race title string
+        dict: race data dictionary
+    """
+    rows = [
+        row.text.split('\n') for row in race_soup.find_all('div', class_='row')
+    ]
+    rows = [[s for s in row if s] for row in rows]
+
+    if is_future_date(rows[0][1]):
+        return rows[0][0], {'date': rows[0][1]}
+
+    return rows[0][0], {
+        'date': rows[0][1],
+        'overall place': rows[1][0].split(':')[1].split(' ')[0],
+        'division place': rows[1][0].split(':')[2],
+        'time': rows[1][1],
+        'age': rows[2][0].split(' ')[1],
+        'rank': rows[2][1].split(' ')[1]
+    }
 
 class UltraSignupAthlete:
     def __init__(self, athlete_url):
@@ -151,7 +180,26 @@ class UltraSignupAthlete:
 
     @classmethod
     def get_races(cls, soup):
-        return []
+        """
+        Get race information for the athlete.
+
+        Args:
+            soup (BeautifulSoup): The soup object.
+
+        Returns:
+            dict: Race history with results
+        """
+        races = soup.find_all(
+            HTML_TAGS['races']['tag'],
+            class_=HTML_TAGS['races']['identifier']
+        )
+        d = {}
+
+        for r in races:
+            k, v = get_race_data(r)
+            d[k] = v
+
+        return d
 
     def athlete_info(self):
         """
