@@ -21,7 +21,7 @@ HTML_TAGS = {
         'attribute': 'class',
         'identifier': 'pull-right noMargin fake_link'
     },
-    'age_rank': {
+    'age rank': {
         'tag': 'div',
         'attribute': 'class',
         'identifier': 'pull-right noMargin fake_link'
@@ -92,8 +92,8 @@ class UltraSignupAthlete:
         athlete_name = athlete_url.split('=')[1:3]
         athlete_name = [name.replace('%20', ' ') for name in athlete_name]
         athlete_name = {
-            'first_name': athlete_name[0].split('&')[0],
-            'last_name': athlete_name[1].split('&')[0]
+            'first name': athlete_name[0].split('&')[0],
+            'last name': athlete_name[1].split('&')[0]
         }
 
         return athlete_name
@@ -111,7 +111,10 @@ class UltraSignupAthlete:
         """
         return soup.find(
             HTML_TAGS['age']['tag'],
-            string=HTML_TAGS['age']['identifier']
+            attrs={
+                HTML_TAGS['age']['attribute']:
+                HTML_TAGS['age']['identifier']
+            }
         ).text[1:]
 
     @classmethod
@@ -127,7 +130,10 @@ class UltraSignupAthlete:
         """
         return soup.find(
             HTML_TAGS['division']['tag'],
-            string=HTML_TAGS['division']['identifier']
+            attrs={
+                HTML_TAGS['division']['attribute']:
+                HTML_TAGS['division']['identifier']
+            }
         ).text[0]
 
     @classmethod
@@ -143,7 +149,10 @@ class UltraSignupAthlete:
         """
         return soup.find(
             HTML_TAGS['rank']['tag'],
-            class_=HTML_TAGS['rank']['identifier']
+            attrs={
+                HTML_TAGS['rank']['attribute']:
+                HTML_TAGS['rank']['identifier']
+            }
         ).text.split('\n')[2].split(':')[1].strip()
 
     @classmethod
@@ -158,8 +167,11 @@ class UltraSignupAthlete:
             str: The athlete age rank.
         """
         return soup.find(
-            HTML_TAGS['age_rank']['tag'],
-            class_=HTML_TAGS['age_rank']['identifier']
+            HTML_TAGS['age rank']['tag'],
+            attrs={
+                HTML_TAGS['age rank']['attribute']:
+                HTML_TAGS['age rank']['identifier']
+            }
         ).text.split('\n')[4].split(':')[1].strip()
 
     @classmethod
@@ -175,8 +187,11 @@ class UltraSignupAthlete:
         """
         return int(soup.find(
             HTML_TAGS['number of races']['tag'],
-            attrs={'style': HTML_TAGS['number of races']['identifier']}
-        ).text.split(' ')[0])
+            attrs={
+                HTML_TAGS['number of races']['attribute']:
+                HTML_TAGS['number of races']['identifier']
+            }
+        ).text.split()[0])
 
     @classmethod
     def get_races(cls, soup):
@@ -191,10 +206,14 @@ class UltraSignupAthlete:
         """
         races = soup.find_all(
             HTML_TAGS['races']['tag'],
-            class_=HTML_TAGS['races']['identifier']
+            attrs={
+                HTML_TAGS['races']['attribute']:
+                HTML_TAGS['races']['identifier']
+            }
         )
         d = {}
 
+        # TODO: Races with the same name will overwrite each other
         for r in races:
             k, v = get_race_data(r)
             d[k] = v
@@ -214,7 +233,7 @@ class UltraSignupAthlete:
             'age': self.age,
             'division': self.division,
             'rank': self.rank,
-            'age_rank': self.age_rank,
-            'num_races': self.num_races,
+            'age rank': self.age_rank,
+            'number of races': self.num_races,
             'races': self.races
         }
