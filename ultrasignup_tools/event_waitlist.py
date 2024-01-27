@@ -1,11 +1,13 @@
 HTML_TAGS = {
-    'event_waitlist_count': {
-        'type': 'span',
-        'id': 'ContentPlaceHolder1_lblCount'
+    'event waitlist count': {
+        'tag': 'span',
+        'attribute': 'id',
+        'identifier': 'ContentPlaceHolder1_lblCount'
     },
-    'event_waitlist_table': {
-        'type': 'table',
-        'id': 'ContentPlaceHolder1_gvEntrants'
+    'event waitlist table': {
+        'tag': 'table',
+        'attribute': 'id',
+        'identifier': 'ContentPlaceHolder1_gvEntrants'
     },
 }
 
@@ -38,9 +40,15 @@ def get_waitlist_count(soup):
         int: The number of athletes on the waitlist.
     """
     count = soup.find(
-        'span',
-        id=HTML_TAGS['event_waitlist_count']['id']
+        HTML_TAGS['event waitlist count']['tag'],
+        attrs={
+            HTML_TAGS['event waitlist count']['attribute']:
+            HTML_TAGS['event waitlist count']['identifier']
+        }
     ).get_text(strip=True)
+
+    if "No Applicants Found" in count:
+        return 0
 
     return [int(s) for s in count.split() if s.isdigit()][0]
 
@@ -57,7 +65,13 @@ def get_waitlist_table(soup, export=False, export_path='waitlist.csv'):
         bs4.element.Tag or None: The waitlist table if not exporting.
 
     """
-    table = soup.find('table', id=HTML_TAGS['event_waitlist_table']['id'])
+    table = soup.find(
+        HTML_TAGS['event waitlist table']['tag'],
+        attrs={
+            HTML_TAGS['event waitlist table']['attribute']:
+            HTML_TAGS['event waitlist table']['identifier']
+        }
+    )
 
     if export:
         export_waitlist_table(table, export_path)
