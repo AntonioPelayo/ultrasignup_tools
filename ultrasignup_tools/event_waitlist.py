@@ -11,24 +11,6 @@ HTML_TAGS = {
     },
 }
 
-def export_waitlist_table(table, export_path):
-    """
-    Export the waitlist table to a CSV file.
-
-    Args:
-        table (bs4.element.Tag): The waitlist table.
-        export_path (str): The file name/export path.
-    """
-    with open(export_path, 'w') as f:
-        f.write(','.join(['Name', 'Home City', 'Home State', 'Rank']))
-        for row in table.find_all('tr'):
-            cells = row.find_all('td')
-            data = [
-                cell.text.strip().replace(', ', ',')
-                for cell in cells[2:]
-            ]
-            f.write(','.join(data) + '\n')
-
 def get_waitlist_count(soup):
     """
     Get the number of athletes on the waitlist.
@@ -51,6 +33,24 @@ def get_waitlist_count(soup):
         return 0
 
     return [int(s) for s in count.split() if s.isdigit()][0]
+
+def export_waitlist_table(table, export_path):
+    """
+    Export the waitlist table to a CSV file.
+
+    Args:
+        table (bs4.element.Tag): The waitlist table.
+        export_path (str): The file name/export path.
+    """
+    with open(export_path, 'w') as f:
+        f.write(','.join(['Name', 'Home City', 'Home State', 'Rank']))
+        for row in table.find_all('tr'):
+            cells = row.find_all('td')
+            data = [
+                cell.text.strip().replace(', ', ',')
+                for cell in cells[2:]
+            ]
+            f.write(','.join(data) + '\n')
 
 def get_waitlist_table(soup, export=False, export_path='waitlist.csv'):
     """
