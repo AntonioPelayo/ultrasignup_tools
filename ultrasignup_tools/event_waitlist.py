@@ -88,9 +88,8 @@ def find_athlete_in_table(table, target_athlete):
         target_athlete (str): The target athlete.
 
     Returns:
-        list: The list of matches and their information.
+        dict or None: The athlete's information if found, otherwise None.
     """
-    matches = []
 
     for row in table.find_all('tr')[1:]:
         cells = row.find_all('td')
@@ -99,11 +98,11 @@ def find_athlete_in_table(table, target_athlete):
         ]
 
         if name == target_athlete:
-            matches.append({
+            return {
                 'order': order,
                 'name': name,
                 'home': home,
                 'rank': rank,
-            })
+            }
 
-    return matches
+    return None
