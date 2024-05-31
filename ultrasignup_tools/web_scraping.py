@@ -1,10 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 
-def load_dynamic_page(url):
+def load_dynamic_page(url, timeout=5):
     """
-    Use Selenium to get the soup object for the webpage.
+    Use Selenium to get the soup object for a dynamic webpage after data loads.
 
     Args:
         url (str): The URL of the webpage.
@@ -16,8 +19,14 @@ def load_dynamic_page(url):
     options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
     driver.get(url)
+    wait = WebDriverWait(driver, timeout)
+    element = wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, '//*[@id="presults"]/div/dl/dd') # Race results table
+        )
+    )
     soup = BeautifulSoup(driver.page_source, 'html.parser')
-    driver.close()
+    driver.quit()
 
     return soup
 
@@ -31,7 +40,7 @@ def get_webpage_soup(url):
     Returns:
         BeautifulSoup: The soup object.
     """
-    if 'results_participant' in url:
+    if 'results_participant' in url: # Athlete page
         soup = load_dynamic_page(url)
     else:
         response = requests.get(url)
