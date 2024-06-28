@@ -74,9 +74,13 @@ def parse_upcoming_race_data(soup):
     date = rows[0][1]
     distance = rows[0][0].split(' - ')[1]
     location = rows[0][0].split(' - ')[2]
-    url = soup.find('a')['href']
 
-    return date + ' - ' + name, {
+    try:
+        url = soup.find('a')['href']
+    except:
+        url = ''
+
+    return {
         'name': name,
         'url': UltraSignupEndpoints.BASE_URL + url,
         'date': date,
@@ -84,7 +88,7 @@ def parse_upcoming_race_data(soup):
         'location': location,
     }
 
-def parse_race_data(race_soup):
+def parse_race_data(soup):
     """
     Extracts race results data from race history table rows.
 
@@ -92,29 +96,45 @@ def parse_race_data(race_soup):
         race_soup (BeautifulSoup): The race row soup object.
 
     Returns:
-        str: race title string
         dict: race data dictionary
     """
-    rows = [row.text.split('\n') for row in race_soup.select('div.row')]
+    rows = [row.text.split('\n') for row in soup.select('div.row')]
     rows = [[s for s in row if s] for row in rows]
 
     name = rows[0][0].split(' - ')[0]
     date = rows[0][1]
     distance = rows[0][0].split(' - ')[1]
     location = rows[0][0].split(' - ')[2]
-    url = race_soup.find('a')['href']
 
-    return date + ' - ' + name, {
+    try:
+        url = soup.find('a')['href']
+    except:
+        url = ''
+
+    if 'DNF' in rows[0][0]:
+        overall_place = 'DNF'
+        division_place = 'DNF'
+        time = 'DNF'
+        age = None
+        rank = 'DNF'
+    else:
+        overall_place = rows[1][0].split(':')[1].split(' ')[0]
+        division_place = rows[1][0].split(':')[2]
+        time = rows[1][1]
+        age = rows[2][0].split(' ')[1]
+        rank = rows[2][1].split(' ')[1]
+
+    return {
         'name': name,
         'url': UltraSignupEndpoints.BASE_URL + url,
         'date': date,
         'distance': distance,
         'location': location,
-        'overall place': rows[1][0].split(':')[1].split(' ')[0],
-        'division place': rows[1][0].split(':')[2],
-        'time': rows[1][1],
-        'age': rows[2][0].split(' ')[1],
-        'rank': rows[2][1].split(' ')[1]
+        'overall place': overall_place,
+        'division place': division_place,
+        'time': time,
+        'age': age,
+        'rank': rank
     }
 
 class UltraSignupAthlete:
@@ -249,18 +269,13 @@ class UltraSignupAthlete:
             soup (BeautifulSoup): The athlete webpage soup object.
 
         Returns:
-            dict: Race history with results
+            list: Race history with results
         """
         races = soup.select(
             f'{HTML_TAGS["races"]["tag"]}.{HTML_TAGS["races"]["identifier"]}:not(.upcoming)'
         )
-        d = {}
 
-        for r in races:
-            k, v = parse_race_data(r)
-            d[k] = v
-
-        return d
+        return [parse_race_data(r) for r in races]
 
     @classmethod
     def get_upcoming_races(cls, soup):
@@ -271,18 +286,13 @@ class UltraSignupAthlete:
             soup (BeautifulSoup): The athlete webpage soup object.
 
         Returns:
-            dict: Upcoming registered races
+            list: Upcoming registered races
         """
         races = soup.select(
             f'{HTML_TAGS["races"]["tag"]}.{HTML_TAGS["races"]["identifier"]}.upcoming'
         )
-        d = {}
 
-        for r in races:
-            k, v = parse_upcoming_race_data(r)
-            d[k] = v
-
-        return d
+        return [parse_upcoming_race_data(r) for r in races]
 
     def athlete_info(self):
         """
