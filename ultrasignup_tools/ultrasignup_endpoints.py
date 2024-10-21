@@ -7,7 +7,7 @@ class UltraSignupEndpoints:
 
     @classmethod
     def event_id(cls, event_url):
-        return event_url.split('=')[-1]
+        return int(event_url.split('=')[-1])
 
     @classmethod
     def event_url(cls, event_id):
