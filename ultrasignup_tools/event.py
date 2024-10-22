@@ -28,6 +28,11 @@ class UltraSignupEvent:
             'attribute': 'id',
             'identifier': 'ContentPlaceHolder1_EventInfoThin1_lblRegistrationStatus'
         },
+        'event_years': {
+            'tag': 'a',
+            'attribute': 'class',
+            'identifier': 'year_link'
+        }
     }
 
     def __init__(self, url):
@@ -35,6 +40,7 @@ class UltraSignupEvent:
         self.id = UltraSignupEndpoints.event_id(url)
         self.soup = get_webpage_soup(self.url)
         self._set_attributes()
+        self.event_years = self.get_event_years()
 
     def _set_attributes(self):
         """
@@ -78,3 +84,26 @@ class UltraSignupEvent:
         attrs = {k: v for k, v in self.__dict__.items()}
         attrs.pop('soup')
         return f'{self.__class__.__name__}({attrs})'
+
+    def get_event_years(self):
+        """
+        Get the event years from the soup object.
+
+        Args:
+            soup (BeautifulSoup): The soup object.
+
+        Returns:
+            list: The event years.
+        """
+        years = []
+
+        for year in self.soup.find_all(
+            self.HTML_TAGS['event_years']['tag'],
+            attrs={
+                self.HTML_TAGS['event_years']['attribute']:
+                self.HTML_TAGS['event_years']['identifier']
+            }
+        ):
+            years.append(year.text)
+
+        return years
