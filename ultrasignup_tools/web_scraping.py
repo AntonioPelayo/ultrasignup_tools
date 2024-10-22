@@ -49,6 +49,25 @@ def get_webpage_soup(url):
 
     return soup
 
+def find_item(soup, tag, attribute, identifier, text=True):
+    """
+    Find the item in the soup object.
+
+    Args:
+        soup (BeautifulSoup): The soup object.
+        tag (str): The tag type.
+        attribute (str): The tag attribute.
+        identifier (str): The tag identifier.
+        text (bool): True if the item is text, False otherwise.
+
+    Returns:
+        str: The item.
+    """
+    if text:
+        return soup.find(tag, attrs={attribute: identifier}).text
+    else:
+        return soup.find(tag, attrs={attribute: identifier})
+
 def save_soup(soup, path='soup.html'):
     """
     Save the soup object to a temporary HTML file.
