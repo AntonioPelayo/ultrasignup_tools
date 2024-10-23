@@ -1,61 +1,6 @@
-import re
-
 from .ultrasignup_endpoints import UltraSignupEndpoints
-from .web_scraping import get_webpage_soup
+from .web_scraping import find_item, get_webpage_soup
 from .utils import is_future_date
-
-age_division_pattern = re.compile(r'[MF]\d+')
-
-HTML_TAGS = {
-    'age': {
-        'tag': 'span',
-        'attribute': 'string',
-        'identifier': age_division_pattern
-    },
-    'division': {
-        'tag': 'span',
-        'attribute': 'string',
-        'identifier': age_division_pattern
-    },
-    'rank': {
-        'tag': 'div',
-        'attribute': 'class',
-        'identifier': 'pull-right noMargin fake_link'
-    },
-    'age rank': {
-        'tag': 'div',
-        'attribute': 'class',
-        'identifier': 'pull-right noMargin fake_link'
-    },
-    'number of races': {
-        'tag': 'div',
-        'attribute': 'style',
-        'identifier': 'font-size:18px;color:#c0c0c0;'
-    },
-    'races': {
-        'tag': 'div',
-        'attribute': 'class',
-        'identifier': 'rowlines'
-    }
-}
-
-def athlete_exists(url):
-    """
-    Check if athlete url returns valid athlete based on the existence of the
-    header row in user table using <div class="groupheader panel row">.
-
-    Args:
-        soup (BeautifulSoup): The soup object.
-
-    Returns:
-        bool: True if the athlete exists, False otherwise.
-    """
-    soup = get_webpage_soup(url)
-
-    if soup.find('div', class_='groupheader panel row'):
-        return True
-
-    return False
 
 def parse_upcoming_race_data(soup):
     """
@@ -138,20 +83,84 @@ def parse_race_data(soup):
     }
 
 class UltraSignupAthlete:
+    age_division_pattern = r'[MF]\d+'
+
+    HTML_TAGS = {
+        'age': {
+            'tag': 'span',
+            'attribute': 'regex',
+            'identifier': age_division_pattern
+        },
+        'division': {
+            'tag': 'span',
+            'attribute': 'regex',
+            'identifier': age_division_pattern
+        },
+        'exists': {
+            'tag': 'div',
+            'attribute': 'class',
+            'identifier': 'groupheader panel row'
+        },
+        'rank': {
+            'tag': 'div',
+            'attribute': 'class',
+            'identifier': 'pull-right noMargin fake_link'
+        },
+        'age rank': {
+            'tag': 'div',
+            'attribute': 'class',
+            'identifier': 'pull-right noMargin fake_link'
+        },
+        'number of races': {
+            'tag': 'div',
+            'attribute': 'style',
+            'identifier': 'font-size:18px;color:#c0c0c0;'
+        },
+        'races': {
+            'tag': 'div',
+            'attribute': 'class',
+            'identifier': 'rowlines'
+        }
+    }
+
     def __init__(self, athlete_url):
         self.url = athlete_url
         self.soup = get_webpage_soup(athlete_url)
-        self.name = self.get_athlete_name(athlete_url)
-        self.age = self.get_age(self.soup)
-        self.division = self.get_division(self.soup)
-        self.rank = self.get_rank(self.soup)
-        self.age_rank = self.get_age_rank(self.soup)
-        self.num_races = self.get_num_races(self.soup)
-        self.race_history = self.get_race_history(self.soup)
-        self.upcoming_races = self.get_upcoming_races(self.soup)
+        self.name = self._get_name()
+        self.age = self._get_age()
+        self.division = self._get_division()
+        self.rank = self._get_rank()
+        self.age_rank = self._get_age_rank()
+        self.num_races = self._get_num_races()
+        self.race_history = self._get_race_history()
+        self.upcoming_races = self._get_upcoming_races()
 
     @classmethod
-    def get_athlete_name(cls, athlete_url):
+    def athlete_exists(self, url=None):
+        """
+        Check if athlete url returns valid athlete based on the existence of the
+        header row in user table using <div class="groupheader panel row">.
+
+        Optional Args:
+            url (str): The athlete URL.
+
+        Returns:
+            bool: True if the athlete exists, False otherwise.
+        """
+        soup = get_webpage_soup(url if url else self.url)
+
+        if find_item(
+            soup,
+            self.HTML_TAGS['exists']['tag'],
+            self.HTML_TAGS['exists']['attribute'],
+            self.HTML_TAGS['exists']['identifier'],
+            text=False
+        ):
+            return True
+
+        return False
+
+    def _get_name(self):
         """
         Get the athlete name from the athlete URL.
 
@@ -161,154 +170,112 @@ class UltraSignupAthlete:
         Returns:
             dict: The athlete name.
         """
-        athlete_name = athlete_url.split('=')[1:3]
+        athlete_name = self.url.split('=')[1:3]
         athlete_name = [name.replace('%20', ' ') for name in athlete_name]
         athlete_name = {
-            'first name': athlete_name[0].split('&')[0],
-            'last name': athlete_name[1].split('&')[0]
+            'first_name': athlete_name[0].split('&')[0],
+            'last_name': athlete_name[1].split('&')[0]
         }
 
         return athlete_name
 
-    @classmethod
-    def get_age(cls, soup):
+    def _get_age(self):
         """
         Get the athlete age.
-
-        Args:
-            soup (BeautifulSoup): The soup object.
 
         Returns:
             str: The athlete age.
         """
-        return soup.find(
-            HTML_TAGS['age']['tag'],
-            text=HTML_TAGS['age']['identifier']
+        return int(find_item(
+            self.soup,
+            self.HTML_TAGS['age']['tag'],
+            self.HTML_TAGS['age']['attribute'],
+            self.HTML_TAGS['age']['identifier']
+        )[1:])
 
-        ).text[1:]
-
-    @classmethod
-    def get_division(cls, soup):
+    def _get_division(self):
         """
         Get the athlete division.
-
-        Args:
-            soup (BeautifulSoup): The soup object.
 
         Returns:
             str: The athlete division.
         """
-        return soup.find(
-            HTML_TAGS['division']['tag'],
-            text=HTML_TAGS['division']['identifier']
-        ).text[0]
+        return find_item(
+            self.soup,
+            self.HTML_TAGS['division']['tag'],
+            self.HTML_TAGS['division']['attribute'],
+            self.HTML_TAGS['division']['identifier']
+        )[0]
 
-    @classmethod
-    def get_rank(cls, soup):
+    def _get_rank(self):
         """
         Get the athlete rank.
-
-        Args:
-            soup (BeautifulSoup): The soup object.
 
         Returns:
             str: The athlete rank.
         """
-        return soup.find(
-            HTML_TAGS['rank']['tag'],
-            attrs={
-                HTML_TAGS['rank']['attribute']:
-                HTML_TAGS['rank']['identifier']
-            }
-        ).text.split('\n')[2].split(':')[1].strip()
+        return find_item(
+            self.soup,
+            self.HTML_TAGS['rank']['tag'],
+            self.HTML_TAGS['rank']['attribute'],
+            self.HTML_TAGS['rank']['identifier']
+        ).split('\n')[2].split(':')[1].strip()
 
-    @classmethod
-    def get_age_rank(cls, soup):
+    def _get_age_rank(self):
         """
         Get the athlete age rank.
-
-        Args:
-            soup (BeautifulSoup): The soup object.
 
         Returns:
             str: The athlete age rank.
         """
-        return soup.find(
-            HTML_TAGS['age rank']['tag'],
-            attrs={
-                HTML_TAGS['age rank']['attribute']:
-                HTML_TAGS['age rank']['identifier']
-            }
-        ).text.split('\n')[4].split(':')[1].strip()
+        return find_item(
+            self.soup,
+            self.HTML_TAGS['age rank']['tag'],
+            self.HTML_TAGS['age rank']['attribute'],
+            self.HTML_TAGS['age rank']['identifier']
+        ).split('\n')[4].split(':')[1].strip()
 
-    @classmethod
-    def get_num_races(cls, soup):
+    def _get_num_races(self):
         """
         Get the number of races the athlete has signed up for.
-
-        Args:
-            soup (BeautifulSoup): The soup object.
 
         Returns:
             int: Number of races.
         """
-        return int(soup.find(
-            HTML_TAGS['number of races']['tag'],
-            attrs={
-                HTML_TAGS['number of races']['attribute']:
-                HTML_TAGS['number of races']['identifier']
-            }
-        ).text.split()[0])
+        return int(find_item(
+            self.soup,
+            self.HTML_TAGS['number of races']['tag'],
+            self.HTML_TAGS['number of races']['attribute'],
+            self.HTML_TAGS['number of races']['identifier']
+        ).split()[0])
 
-    @classmethod
-    def get_race_history(cls, soup):
+    def _get_race_history(self):
         """
         Get race history for the athlete.
-
-        Args:
-            soup (BeautifulSoup): The athlete webpage soup object.
 
         Returns:
             list: Race history with results
         """
-        races = soup.select(
-            f'{HTML_TAGS["races"]["tag"]}.{HTML_TAGS["races"]["identifier"]}:not(.upcoming)'
+        races = self.soup.select(
+            f'{self.HTML_TAGS["races"]["tag"]}.{self.HTML_TAGS["races"]["identifier"]}:not(.upcoming)'
         )
 
         return [parse_race_data(r) for r in races]
 
-    @classmethod
-    def get_upcoming_races(cls, soup):
+    def _get_upcoming_races(self):
         """
         Get the upcoming registered races for the athlete.
-
-        Args:
-            soup (BeautifulSoup): The athlete webpage soup object.
 
         Returns:
             list: Upcoming registered races
         """
-        races = soup.select(
-            f'{HTML_TAGS["races"]["tag"]}.{HTML_TAGS["races"]["identifier"]}.upcoming'
+        races = self.soup.select(
+            f'{self.HTML_TAGS["races"]["tag"]}.{self.HTML_TAGS["races"]["identifier"]}.upcoming'
         )
 
         return [parse_upcoming_race_data(r) for r in races]
 
-    def athlete_info(self):
-        """
-        Get the athlete information.
-
-        Returns:
-            dict: The athlete information.
-        """
-        return {
-            'url': self.url,
-            'name': self.name,
-            'age': self.age,
-            'division': self.division,
-            'rank': self.rank,
-            'age rank': self.age_rank,
-            'number of races': self.num_races,
-            'race_history': self.race_history,
-            'upcoming_races': self.upcoming_races
-        }
+    def __repr__(self):
+        attrs = {k: v for k, v in self.__dict__.items()}
+        attrs.pop('soup')
+        return f'{self.__class__.__name__}({attrs})'
