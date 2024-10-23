@@ -1,3 +1,5 @@
+import re
+
 import requests
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
@@ -63,10 +65,13 @@ def find_item(soup, tag, attribute, identifier, text=True):
     Returns:
         str: The item.
     """
-    if text:
-        return soup.find(tag, attrs={attribute: identifier}).text
+
+    if attribute == 'regex':
+        tag = soup.find(tag, text=re.compile(identifier))
     else:
-        return soup.find(tag, attrs={attribute: identifier})
+        tag = soup.find(tag, attrs={attribute: identifier})
+
+    return tag.text if text else tag
 
 def save_soup(soup, path='soup.html'):
     """
