@@ -18,5 +18,9 @@ class UltraSignupEndpoints:
         return f'{cls.BASE_URL}/entrants_event.aspx?did={event_id}'
 
     @classmethod
+    def event_results_url(cls, event_id):
+        return f'{cls.BASE_URL}/results_event.aspx?did={event_id}'
+
+    @classmethod
     def event_waitlist_url(cls, event_id):
         return f'{cls.BASE_URL}/event_waitlist.aspx?did={event_id}'

@@ -24,7 +24,8 @@ def load_dynamic_page(url, timeout=5):
     wait = WebDriverWait(driver, timeout)
     element = wait.until(
         EC.presence_of_element_located(
-            (By.XPATH, '//*[@id="presults"]/div/dl/dd') # Race results table
+            # Athlete results table | event results table
+            (By.XPATH, '//*[@id="presults"]/div/dl/dd | //*[@id="list"]')
         )
     )
     soup = BeautifulSoup(driver.page_source, 'html.parser')

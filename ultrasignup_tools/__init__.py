@@ -1,9 +1,6 @@
 from .athlete import UltraSignupAthlete
-from .event_entrants import (
-    get_entrants_count,
-    get_entrants_table,
-    export_entrants_table
-)
+from .event_entrants import EventEntrants
+from .event_results import EventResults
 from .event_waitlist import (
     get_waitlist_count,
     export_waitlist_table,
