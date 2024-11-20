@@ -21,8 +21,9 @@ class EventResults:
     }
 
     def __init__(self, url):
-        self.url = url
         self.event_id = UltraSignupEndpoints.event_id(url)
+        self.results_url = UltraSignupEndpoints.event_results_url(self.event_id)
+        self.event_url = UltraSignupEndpoints.event_url(self.event_id)
         self.soup = load_dynamic_page(url)
         self.winner_info = self.get_winner_results()
 

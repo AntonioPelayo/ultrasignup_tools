@@ -36,11 +36,14 @@ class UltraSignupEvent:
     }
 
     def __init__(self, url):
-        self.url = url
         self.id = UltraSignupEndpoints.event_id(url)
-        self.soup = get_webpage_soup(self.url)
+        self.event_url = UltraSignupEndpoints.event_url(self.id)
+        self.results_url = UltraSignupEndpoints.event_results_url(self.id)
+        self.waitlist_url = UltraSignupEndpoints.event_waitlist_url(self.id)
+        self.soup = get_webpage_soup(self.event_url)
         self._set_attributes()
         self.event_years = self.get_event_years()
+        self.event_years_urls = self.get_event_years(urls=True)
 
     def _set_attributes(self):
         """
@@ -85,15 +88,15 @@ class UltraSignupEvent:
         attrs.pop('soup')
         return f'{self.__class__.__name__}({attrs})'
 
-    def get_event_years(self):
+    def get_event_years(self, urls=False):
         """
         Get the event years from the soup object.
 
         Args:
-            soup (BeautifulSoup): The soup object.
+            urls (bool): True if historical result URLs
 
         Returns:
-            list: The event years.
+            list: The event years or event results urls.
         """
         years = []
 
@@ -104,6 +107,9 @@ class UltraSignupEvent:
                 self.HTML_TAGS['event_years']['identifier']
             }
         ):
-            years.append(year.text)
+            if urls:
+                years.append(f"{UltraSignupEndpoints.BASE_URL}{year['href']}")
+            else:
+                years.append(year.text)
 
         return years
